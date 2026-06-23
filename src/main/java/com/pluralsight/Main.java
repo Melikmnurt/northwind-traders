@@ -17,7 +17,7 @@ public class Main {
         dataSource.setUsername("root");
         dataSource.setPassword("Mohammednur");
 
-        String sql = "SELECT ProductName FROM products";
+        String sql = "SELECT ProductID, ProductName, UnitPrice, UnitsInStock FROM products";
 
         try (
                 Connection connection = dataSource.getConnection();
@@ -26,8 +26,16 @@ public class Main {
         ) {
 
             while (results.next()) {
+                int productId = results.getInt("ProductID");
                 String productName = results.getString("ProductName");
-                System.out.println(productName);
+                double unitPrice = results.getDouble("UnitPrice");
+                int unitsInStock = results.getInt("UnitsInStock");
+
+                System.out.println("Product Id: " + productId);
+                System.out.println("Name:       " + productName);
+                System.out.println("Price:      " + unitPrice);
+                System.out.println("Stock:      " + unitsInStock);
+                System.out.println("--------------------");
             }
 
         } catch (SQLException e) {
