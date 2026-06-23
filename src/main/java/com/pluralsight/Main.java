@@ -19,28 +19,29 @@ public class Main {
         BasicDataSource dataSource = new BasicDataSource();
         dataSource.setUrl("jdbc:mysql://localhost:3306/northwind");
         dataSource.setUsername("root");
-
-        // Replace with your actual MySQL password
         dataSource.setPassword("Mohammednur");
 
         // Display home screen menu
         System.out.println("What do you want to do?");
         System.out.println("  1) Display all products");
         System.out.println("  2) Display all customers");
+        System.out.println("  3) Display all categories");
         System.out.println("  0) Exit");
         System.out.print("Select an option: ");
 
-        // Read user's menu choice
-        int choice = scanner.nextInt();
+        // Read user choice as text so injection test input does not crash
+        String choice = scanner.nextLine();
 
-        // Execute the selected option
-        if (choice == 1) {
+        if (choice.equals("1")) {
             displayProducts(dataSource);
         }
-        else if (choice == 2) {
+        else if (choice.equals("2")) {
             displayCustomers(dataSource);
         }
-        else if (choice == 0) {
+        else if (choice.equals("3")) {
+            displayCategories(dataSource, scanner);
+        }
+        else if (choice.equals("0")) {
             System.out.println("Goodbye!");
         }
         else {
@@ -50,38 +51,23 @@ public class Main {
         scanner.close();
     }
 
-    // Display all products from the Products table
+    // Display all products
     public static void displayProducts(BasicDataSource dataSource) {
 
-        // SQL query to retrieve product information
-        String sql =
-                "SELECT ProductID, ProductName, UnitPrice, UnitsInStock " +
-                        "FROM products";
+        String sql = "SELECT ProductID, ProductName, UnitPrice, UnitsInStock FROM products";
 
-        // Automatically close resources when finished
         try (
                 Connection connection = dataSource.getConnection();
                 PreparedStatement statement = connection.prepareStatement(sql);
                 ResultSet results = statement.executeQuery()
         ) {
-
-            // Process each row returned by the query
             while (results.next()) {
-
-                // Read values from the current row
-                int productId = results.getInt("ProductID");
-                String productName = results.getString("ProductName");
-                double unitPrice = results.getDouble("UnitPrice");
-                int unitsInStock = results.getInt("UnitsInStock");
-
-                // Display product information
-                System.out.println("Product Id: " + productId);
-                System.out.println("Name:       " + productName);
-                System.out.printf("Price:      %.2f%n", unitPrice);
-                System.out.println("Stock:      " + unitsInStock);
+                System.out.println("Product Id: " + results.getInt("ProductID"));
+                System.out.println("Name:       " + results.getString("ProductName"));
+                System.out.printf("Price:      %.2f%n", results.getDouble("UnitPrice"));
+                System.out.println("Stock:      " + results.getInt("UnitsInStock"));
                 System.out.println("--------------------");
             }
-
         }
         catch (SQLException e) {
             e.printStackTrace();
@@ -91,38 +77,69 @@ public class Main {
     // Display all customers ordered by country
     public static void displayCustomers(BasicDataSource dataSource) {
 
-        // SQL query to retrieve customer information
-        String sql =
-                "SELECT ContactName, CompanyName, City, Country, Phone " +
-                        "FROM customers " +
-                        "ORDER BY Country";
+        String sql = "SELECT ContactName, CompanyName, City, Country, Phone FROM customers ORDER BY Country";
 
-        // Automatically close resources when finished
         try (
                 Connection connection = dataSource.getConnection();
                 PreparedStatement statement = connection.prepareStatement(sql);
                 ResultSet results = statement.executeQuery()
         ) {
-
-            // Process each customer returned by the query
             while (results.next()) {
-
-                // Read values from the current row
-                String contactName = results.getString("ContactName");
-                String companyName = results.getString("CompanyName");
-                String city = results.getString("City");
-                String country = results.getString("Country");
-                String phone = results.getString("Phone");
-
-                // Display customer information
-                System.out.println("Contact: " + contactName);
-                System.out.println("Company: " + companyName);
-                System.out.println("City:    " + city);
-                System.out.println("Country: " + country);
-                System.out.println("Phone:   " + phone);
+                System.out.println("Contact: " + results.getString("ContactName"));
+                System.out.println("Company: " + results.getString("CompanyName"));
+                System.out.println("City:    " + results.getString("City"));
+                System.out.println("Country: " + results.getString("Country"));
+                System.out.println("Phone:   " + results.getString("Phone"));
                 System.out.println("--------------------");
             }
+        }
+        catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 
+    // Display categories, ask for category ID, then display products in that category
+    public static void displayCategories(BasicDataSource dataSource, Scanner scanner) {
+
+        String categorySql = "SELECT CategoryID, CategoryName FROM categories ORDER BY CategoryID";
+
+        try (
+                Connection connection = dataSource.getConnection();
+                PreparedStatement categoryStatement = connection.prepareStatement(categorySql);
+                ResultSet categoryResults = categoryStatement.executeQuery()
+        ) {
+            System.out.println("Categories");
+            System.out.println("--------------------");
+
+            while (categoryResults.next()) {
+                System.out.println(categoryResults.getInt("CategoryID") + ") "
+                        + categoryResults.getString("CategoryName"));
+            }
+
+            System.out.print("Enter a category ID: ");
+            String categoryId = scanner.nextLine();
+
+            // The ? placeholder keeps user input safe
+            String productSql =
+                    "SELECT ProductID, ProductName, UnitPrice, UnitsInStock " +
+                            "FROM products " +
+                            "WHERE CategoryID = ?";
+
+            try (
+                    PreparedStatement productStatement = connection.prepareStatement(productSql)
+            ) {
+                productStatement.setString(1, categoryId);
+
+                try (ResultSet productResults = productStatement.executeQuery()) {
+                    while (productResults.next()) {
+                        System.out.println("Product Id: " + productResults.getInt("ProductID"));
+                        System.out.println("Name:       " + productResults.getString("ProductName"));
+                        System.out.printf("Price:      %.2f%n", productResults.getDouble("UnitPrice"));
+                        System.out.println("Stock:      " + productResults.getInt("UnitsInStock"));
+                        System.out.println("--------------------");
+                    }
+                }
+            }
         }
         catch (SQLException e) {
             e.printStackTrace();
