@@ -1,17 +1,37 @@
 package com.pluralsight;
 
-//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
-// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
-public class Main {
-    public static void main(String[] args) {
-        //TIP Press <shortcut actionId="ShowIntentionActions"/> with your caret at the highlighted text
-        // to see how IntelliJ IDEA suggests fixing it.
-        System.out.printf("Hello and welcome!");
+import org.apache.commons.dbcp2.BasicDataSource;
 
-        for (int i = 1; i <= 5; i++) {
-            //TIP Press <shortcut actionId="Debug"/> to start debugging your code. We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-            // for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.
-            System.out.println("i = " + i);
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+public class Main {
+
+    public static void main(String[] args) {
+
+        BasicDataSource dataSource = new BasicDataSource();
+
+        dataSource.setUrl("jdbc:mysql://localhost:3306/northwind");
+        dataSource.setUsername("root");
+        dataSource.setPassword("Mohammednur");
+
+        String sql = "SELECT ProductName FROM products";
+
+        try (
+                Connection connection = dataSource.getConnection();
+                PreparedStatement statement = connection.prepareStatement(sql);
+                ResultSet results = statement.executeQuery()
+        ) {
+
+            while (results.next()) {
+                String productName = results.getString("ProductName");
+                System.out.println(productName);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 }
